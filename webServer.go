@@ -149,10 +149,42 @@ func promedioIndividual(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func promedioGeneral(response http.ResponseWriter, request *http.Request) {
+	var message string
+	promedio := 0.0
+
+	if len(alumnos) == 0 {
+		message = "No hay alumnos registrados"
+	} else {
+		for alumno := range alumnos {
+			promedio += obtenerPromedioIndividual(alumno)
+		}
+		promedio /= float64(len(alumnos))
+		aux := fmt.Sprintf("%f", promedio)
+
+		message = "<tr>" +
+			"<td>" + "General" + "</td>" +
+			"<td>" + aux + "</td>" +
+			"</tr>"
+	}
+
+	response.Header().Set(
+		"Content-Type",
+		"text.html",
+	)
+
+	fmt.Fprintf(
+		response,
+		loadHTML("promedioIndividual.html"),
+		message,
+	)
+}
+
 func main() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/postReceiver", postReceiver)
 	http.HandleFunc("/promedioIndividual", promedioIndividual)
+	http.HandleFunc("/promedioGeneral", promedioGeneral)
 	fmt.Println("Servidor en ejecucion...")
 	http.ListenAndServe(":9000", nil)
 }
