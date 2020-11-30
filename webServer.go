@@ -180,11 +180,55 @@ func promedioGeneral(response http.ResponseWriter, request *http.Request) {
 	)
 }
 
+func obtenerPromedioMateria(nombreMateria string) float64 {
+	promedio, contadorAlumnos := 0.0, 0.0
+
+	if _, materiaExists := materias[nombreMateria]; materiaExists {
+		for _, value := range materias[nombreMateria] {
+			promedio += value
+			contadorAlumnos++
+		}
+		promedio /= contadorAlumnos
+		return promedio
+	}
+	return -1
+}
+
+func promedioMateria(response http.ResponseWriter, request *http.Request) {
+	var message string
+
+	objetivo := request.FormValue("promedioMateria")
+	promedio := obtenerPromedioMateria(objetivo)
+
+	if promedio == -1 {
+		message = "Materia no existente"
+	} else {
+		aux := fmt.Sprintf("%f", promedio)
+
+		message = "<tr>" +
+			"<td>" + objetivo + "</td>" +
+			"<td>" + aux + "</td>" +
+			"</tr>"
+	}
+
+	response.Header().Set(
+		"Content-Type",
+		"text.html",
+	)
+
+	fmt.Fprintf(
+		response,
+		loadHTML("promedioMateria.html"),
+		message,
+	)
+}
+
 func main() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/postReceiver", postReceiver)
 	http.HandleFunc("/promedioIndividual", promedioIndividual)
 	http.HandleFunc("/promedioGeneral", promedioGeneral)
+	http.HandleFunc("/promedioMateria", promedioMateria)
 	fmt.Println("Servidor en ejecucion...")
 	http.ListenAndServe(":9000", nil)
 }
