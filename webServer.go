@@ -10,29 +10,6 @@ import (
 var materias = map[string]map[string]float64{}
 var alumnos = map[string]map[string]float64{}
 
-// var materias = map[string]informacion{}
-// var alumnos = map[string]informacion{}
-
-// type informacion struct {
-// 	nombre       string // Nombre de materia o alumno, dependiendo del map.
-// 	calificacion float64
-// }
-
-// func obtenerPromedioIndividual(nombreAlumno string) float64 {
-// 	promedio, contadorMaterias := 0.0, 0.0
-
-// 	for _, value := range alumnos {
-// 		fmt.Println(value)
-// 		if value.nombre == nombreAlumno {
-// 			promedio += value.calificacion
-// 			contadorMaterias++
-// 		}
-// 	}
-// 	promedio /= contadorMaterias
-// 	return promedio
-
-// }
-
 func loadHTML(htmlDocument string) string {
 	html, _ := ioutil.ReadFile(htmlDocument)
 
@@ -70,14 +47,21 @@ func postReceiver(response http.ResponseWriter, request *http.Request) {
 			if _, alumnoExists := alumnos[alumno]; alumnoExists {
 				if _, materiaExists := alumnos[alumno][materia]; materiaExists {
 					message = "Calificacion existente. Imposible modificar."
-					// Si ambos existen, no podemos modificar la calificacion existente.
+					// Si existe el alumno, y la materia *para ese alumno*, quiere decir que ya existe calificacion y no es modificable.
 				} else {
-					alumnos[alumno][materia] = calificacion
+					// Veamos si la materia ya existe en el mapa; que haya sido generada por el registro de otro alumno.
+					if _, materiaExists := materias[materia]; materiaExists {
+						alumnos[alumno][materia] = calificacion
+						materias[materia][alumno] = calificacion
+						message = "Registro realizado con exito"
 
-					materias[materia] = make(map[string]float64)
-					materias[materia][alumno] = calificacion
-					message = "Registro realizado con exito"
-					// Si existe el alumno pero no la materia, la creamos y registramos.
+					} else {
+						alumnos[alumno][materia] = calificacion
+						materias[materia] = make(map[string]float64)
+						materias[materia][alumno] = calificacion
+						message = "Registro realizado con exito"
+						// Creamos la nueva materia.
+					}
 				}
 			} else {
 				// Si no existe el alumno, necesitamos revisar si existe o no la materia.
@@ -118,42 +102,65 @@ func postReceiver(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
-// func promedioIndividual(response http.ResponseWriter, request *http.Request) {
-// 	var message string
+func obtenerPromedioIndividual(nombreAlumno string) float64 {
+	promedio, contadorMaterias := 0.0, 0.0
 
-// 	switch request.Method {
-// 	case "GET":
-// 		if err := request.ParseForm(); err != nil {
-// 			fmt.Fprintf(response, "ParseForm() error %v", err)
-// 			return
-// 		}
+	for key, value := range alumnos {
+		fmt.Println("Key:", key, "Value:", value)
+		if key == nombreAlumno {
+			for i := range alumnos[key] {
+				promedio += alumnos[key][i]
+				contadorMaterias++
+			}
+		}
+		// if value == nombreAlumno {
+		// 	promedio += value.calificacion
+		// 	contadorMaterias++
+		// }
+	}
 
-// 		alumno := request.FormValue("promedioIndividual")
-// 		promedio := obtenerPromedioIndividual(alumno)
+	promedio /= contadorMaterias
+	fmt.Println("Promedio:", promedio)
+	// return promedio
+	return 0
+}
 
-// 		if promedio == -1 {
-// 			message = "Alumno no existente"
-// 		} else {
-// 			message = fmt.Sprintf("%f", promedio)
-// 		}
+func promedioIndividual(response http.ResponseWriter, request *http.Request) {
+	var message string
 
-// 		response.Header().Set(
-// 			"Content-Type",
-// 			"text.html",
-// 		)
+	switch request.Method {
+	case "GET":
+		if err := request.ParseForm(); err != nil {
+			fmt.Fprintf(response, "ParseForm() error %v", err)
+			return
+		}
 
-// 		fmt.Fprintf(
-// 			response,
-// 			loadHTML("promedioIndividual.html"),
-// 			message,
-// 		)
-// 	}
-// }
+		alumno := request.FormValue("promedioIndividual")
+		promedio := obtenerPromedioIndividual(alumno)
+
+		if promedio == -1 {
+			message = "Alumno no existente"
+		} else {
+			message = fmt.Sprintf("%f", promedio)
+		}
+
+		response.Header().Set(
+			"Content-Type",
+			"text.html",
+		)
+
+		fmt.Fprintf(
+			response,
+			loadHTML("promedioIndividual.html"),
+			message,
+		)
+	}
+}
 
 func main() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/postReceiver", postReceiver)
-	// http.HandleFunc("/promedioIndividual", promedioIndividual)
+	http.HandleFunc("/promedioIndividual", promedioIndividual)
 	fmt.Println("Servidor en ejecucion...")
 	http.ListenAndServe(":9000", nil)
 }
