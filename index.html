@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bienvenido!</title>
+    </head>
+    <body>
+        <form action="postReceiver" method="POST">
+            <label for="nombreAlumno">Nombre del alumno: </label>
+            <input type="string" name="nombreAlumno" value=""><br><br>
+
+            <label for="materia">Materia: </label>
+            <input type="string" name="materia" value=""><br><br>
+
+            <label for="calificacion">Calificacion: </label>
+            <input type="decimal" name="calificacion" value=""><br><br>
+            
+            <input type="submit" value="Registrar">
+        </form><br><br><br>
+
+        <p>Obtener promedio de un alumno:</p>
+        <form action="promedioIndividual" method="GET">
+            <label for="promedioIndividual"></label>
+            <input type="string" name="promedioIndividual" value=""><br><br>
+    
+            <input type="submit" value="Aceptar">
+        </form>
+
+
+    </body>
+</html>
