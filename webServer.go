@@ -53,15 +53,13 @@ func postReceiver(response http.ResponseWriter, request *http.Request) {
 					if _, materiaExists := materias[materia]; materiaExists {
 						alumnos[alumno][materia] = calificacion
 						materias[materia][alumno] = calificacion
-						message = "Registro realizado con exito"
-
 					} else {
 						alumnos[alumno][materia] = calificacion
 						materias[materia] = make(map[string]float64)
 						materias[materia][alumno] = calificacion
-						message = "Registro realizado con exito"
 						// Creamos la nueva materia.
 					}
+					message = "Registro realizado con exito"
 				}
 			} else {
 				// Si no existe el alumno, necesitamos revisar si existe o no la materia.
@@ -70,7 +68,6 @@ func postReceiver(response http.ResponseWriter, request *http.Request) {
 					alumnos[alumno][materia] = calificacion
 
 					materias[materia][alumno] = calificacion
-					message = "Registro realizado con exito"
 				} else {
 					// Si no existen ninguno de los dos, los creamos y les damos sus valores.
 					alumnos[alumno] = make(map[string]float64)
@@ -78,8 +75,8 @@ func postReceiver(response http.ResponseWriter, request *http.Request) {
 
 					materias[materia] = make(map[string]float64)
 					materias[materia][alumno] = calificacion
-					message = "Registro realizado con exito"
 				}
+				message = "Registro realizado con exito"
 			}
 		} else {
 			fmt.Println(err)
@@ -105,24 +102,15 @@ func postReceiver(response http.ResponseWriter, request *http.Request) {
 func obtenerPromedioIndividual(nombreAlumno string) float64 {
 	promedio, contadorMaterias := 0.0, 0.0
 
-	for key, value := range alumnos {
-		fmt.Println("Key:", key, "Value:", value)
-		if key == nombreAlumno {
-			for i := range alumnos[key] {
-				promedio += alumnos[key][i]
-				contadorMaterias++
-			}
+	if _, alumnoExists := alumnos[nombreAlumno]; alumnoExists {
+		for _, value := range alumnos[nombreAlumno] {
+			promedio += value
+			contadorMaterias++
 		}
-		// if value == nombreAlumno {
-		// 	promedio += value.calificacion
-		// 	contadorMaterias++
-		// }
+		promedio /= contadorMaterias
+		return promedio
 	}
-
-	promedio /= contadorMaterias
-	fmt.Println("Promedio:", promedio)
-	// return promedio
-	return 0
+	return -1
 }
 
 func promedioIndividual(response http.ResponseWriter, request *http.Request) {
@@ -141,7 +129,11 @@ func promedioIndividual(response http.ResponseWriter, request *http.Request) {
 		if promedio == -1 {
 			message = "Alumno no existente"
 		} else {
-			message = fmt.Sprintf("%f", promedio)
+			aux := fmt.Sprintf("%f", promedio)
+			message = "<tr>" +
+				"<td>" + alumno + "</td>" +
+				"<td>" + aux + "</td>" +
+				"</tr>"
 		}
 
 		response.Header().Set(
